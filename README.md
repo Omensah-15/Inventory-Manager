@@ -1,8 +1,8 @@
 # 📦 InventoryPro — Inventory Management App
 
-**InventoryPro** is a lightweight, professional, and easy-to-use **inventory tracking system**.
-visit App [Invypro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/).  
-It allows you to manage products, track sales, restocks, and adjustments, and visualize inventory trends — all from your browser.
+**InventoryPro** is a lightweight, professional, and user-friendly **inventory tracking system**.
+Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/).  
+With InvyPro, you can manage products, track sales, restocks, and adjustments, and visualize inventory trends — all directly from your browser.
 
 ---
 
