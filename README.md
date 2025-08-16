@@ -63,10 +63,10 @@ $env:INVYPRO_DB="C:\full\path\inventory.db"
 streamlit run app.py
 ```
 ---
-## 📜 License
-   MIT License — free to use and modify.
+## 📜 License:
+**MIT License** — free to use and modify.
 ---
-## Author
-   Developed by Mensah Obed
+## Author: 
+Developed by Mensah Obed
 📧Email: heavenzlebron7@gmail.com
 ---
