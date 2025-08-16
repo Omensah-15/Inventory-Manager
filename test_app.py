@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="📦 Simple Inventory Tracker", layout="centered")
+st.set_page_config(page_title="📦 Inventory Tracker", layout="centered")
 
 # --- Load or create data ---
 DATA_FILE = "inventory.csv"
@@ -15,8 +15,7 @@ else:
     df = pd.DataFrame(columns=["Product", "Stock", "Price"])
 
 # --- App title ---
-st.title("📦 Simple Inventory Tracker")
-st.write("A minimal, fast-deploy version for testing with charts & alerts.")
+st.title("📦 Inventory Tracker")
 
 # --- Add new product ---
 st.subheader("➕ Add New Product")
