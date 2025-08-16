@@ -536,36 +536,37 @@ elif page == "Products":
     with col1:
         product_name = st.text_input("Product Name")
         category = st.text_input("Category")
+
         cost_price = st.number_input(
             "Cost Price",
-            min_value=0.0,
+            min_value=float(0.0),
             max_value=float(10**12),
-            value=0.0,
-            step=0.01,
+            value=float(0.0),
+            step=float(0.01),
             format="%.2f"
         )
         selling_price = st.number_input(
             "Selling Price",
-            min_value=0.0,
+            min_value=float(0.0),
             max_value=float(10**12),
-            value=0.0,
-            step=0.01,
+            value=float(0.0),
+            step=float(0.01),
             format="%.2f"
         )
     with col2:
         quantity = st.number_input(
             "Quantity",
-            min_value=0,
-            max_value=10**9,
-            value=0,
-            step=1
+            min_value=int(0),
+            max_value=int(10**9),
+            value=int(0),
+            step=int(1)
         )
         restock_level = st.number_input(
             "Restock Level",
-            min_value=0,
-            max_value=10**9,
-            value=0,
-            step=1
+            min_value=int(0),
+            max_value=int(10**9),
+            value=int(0),
+            step=int(1)
         )
         supplier = st.text_input("Supplier")
         description = st.text_area("Description")
@@ -924,5 +925,6 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
 
