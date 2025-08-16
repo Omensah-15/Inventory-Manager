@@ -1,6 +1,7 @@
-# 📦 InventoryPro — Streamlit Inventory Management App
+# 📦 InventoryPro — Inventory Management App
 
-**InventoryPro** is a lightweight, professional, and easy-to-use **inventory tracking system** built with [Streamlit](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/).  
+**InventoryPro** is a lightweight, professional, and easy-to-use **inventory tracking system**.
+visit App [Invypro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/).  
 It allows you to manage products, track sales, restocks, and adjustments, and visualize inventory trends — all from your browser.
 
 ---
