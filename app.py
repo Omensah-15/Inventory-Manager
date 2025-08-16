@@ -1,5 +1,5 @@
 """
-InvyPro — Inventory Manager (Single-file Streamlit app)
+InvyPro — Inventory Manager
 
 Features:
 - SQLite persistence (products + transactions + suppliers + audit_logs)
@@ -899,3 +899,4 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
