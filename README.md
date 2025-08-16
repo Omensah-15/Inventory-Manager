@@ -18,10 +18,10 @@ It allows you to manage products, track sales, restocks, and adjustments, and vi
 ---
 
 ## 📂 Project Structure
-InventoryPro/
-│── app.py # Main Streamlit app
-│── requirements.txt # Python dependencies
-│── README.md # Documentation
+Inventory Manager/
+- app.py # Main Streamlit app
+- requirements.txt # Python dependencies
+- README.md # Documentation
 
 
 ---
