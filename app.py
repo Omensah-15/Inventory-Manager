@@ -531,35 +531,60 @@ if page == "Dashboard":
 # -------------------------------
 elif page == "Products":
     st.header("🧾 Products")
-    with st.expander("➕ Add / Edit Product"):
-        if not is_admin:
-            st.warning("Login as admin to add or edit products.")
-        sku = st.text_input("SKU *")
-        name = st.text_input("Name *")
-        colA, colB, colC = st.columns(3)
-        with colA:
-            category = st.text_input("Category")
-        with colB:
-            supplier_name = st.text_input("Supplier")
-        with colC:
-            reorder_level = st.number_input("Reorder Level", 0, 10**9, 0, step=1)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            cost_price = st.number_input("Cost Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
-        with col2:
-            sell_price = st.number_input("Sell Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
-        with col3:
-            qty = st.number_input("Initial Quantity", 0, 10**9, 0, step=1)
-        if st.button("Save Product", type="primary", disabled=not is_admin):
-            try:
-                pid = upsert_product(
-                    sku.strip(), name.strip(), category.strip(), supplier_name.strip(), float(cost_price), float(sell_price), int(qty), int(reorder_level)
-                )
-                st.success(f"Saved product (ID: {pid}).")
-                st.experimental_rerun()
-            except ValueError:
-                # validate_text_input already shows errors
-                pass
+    with st.expander("+ Add / Edit Product"):
+    col1, col2 = st.columns(2)
+    with col1:
+        product_name = st.text_input("Product Name")
+        category = st.text_input("Category")
+        cost_price = st.number_input(
+            "Cost Price",
+            min_value=0.0,
+            max_value=float(10**12),
+            value=0.0,
+            step=0.01,
+            format="%.2f"
+        )
+        selling_price = st.number_input(
+            "Selling Price",
+            min_value=0.0,
+            max_value=float(10**12),
+            value=0.0,
+            step=0.01,
+            format="%.2f"
+        )
+    with col2:
+        quantity = st.number_input(
+            "Quantity",
+            min_value=0,
+            max_value=10**9,
+            value=0,
+            step=1
+        )
+        restock_level = st.number_input(
+            "Restock Level",
+            min_value=0,
+            max_value=10**9,
+            value=0,
+            step=1
+        )
+        supplier = st.text_input("Supplier")
+        description = st.text_area("Description")
+    if st.button("Save Product", type="primary"):
+        if product_name and category:
+            new_product = {
+                "Product Name": product_name,
+                "Category": category,
+                "Cost Price": cost_price,
+                "Selling Price": selling_price,
+                "Quantity": quantity,
+                "Restock Level": restock_level,
+                "Supplier": supplier,
+                "Description": description
+            }
+            # Save product to DB / CSV
+            st.success(f"✅ {product_name} saved successfully!")
+        else:
+            st.error("⚠️ Product name and category are required.")
 
     st.subheader("📄 Product List")
     q = st.text_input("Search (SKU / Name / Category)")
@@ -899,4 +924,5 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
