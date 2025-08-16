@@ -33,18 +33,19 @@ InventoryPro/
 git clone https://github.com/Omeansah-15/InventoryPro.git
 cd InventoryPro
 ```
+---
 ### 2. Create a virtual environment (optional but recommended)
 ```bash
 python -m venv venv
 source venv/bin/activate      # Mac/Linux
 venv\Scripts\activate         # Windows
 ```
-
+---
 ### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
-
+---
 ## Environment Variables
 Create a .env file in the project root or set them in your terminal:
 ```
@@ -56,13 +57,15 @@ export INVYPRO_DB="/absolute/path/to/inventory.db"
 $env:INVYPRO_ADMIN="yourpassword"
 $env:INVYPRO_DB="C:\full\path\inventory.db"
 ```
+---
 ## Run the App
 ```
 streamlit run app.py
 ```
+---
 ## 📜 License
 MIT License — free to use and modify.
-
+---
 ## Author
 Developed by Mensah Obed
 📧 Email: heavenzlebron7@gmail.com
