@@ -532,7 +532,7 @@ if page == "Dashboard":
 elif page == "Products":
     st.header("🧾 Products")
     with st.expander("+ Add / Edit Product"):
-    col1, col2 = st.columns(2)
+         col1, col2 = st.columns(2)
 
     with col1:
         product_name = st.text_input("Product Name")
@@ -933,6 +933,7 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
 
 
