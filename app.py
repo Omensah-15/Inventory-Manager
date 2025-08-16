@@ -533,6 +533,7 @@ elif page == "Products":
     st.header("🧾 Products")
     with st.expander("+ Add / Edit Product"):
     col1, col2 = st.columns(2)
+
     with col1:
         product_name = st.text_input("Product Name")
         category = st.text_input("Category")
@@ -545,6 +546,7 @@ elif page == "Products":
             step=float(0.01),
             format="%.2f"
         )
+
         selling_price = st.number_input(
             "Selling Price",
             min_value=float(0.0),
@@ -553,6 +555,7 @@ elif page == "Products":
             step=float(0.01),
             format="%.2f"
         )
+
     with col2:
         quantity = st.number_input(
             "Quantity",
@@ -561,6 +564,7 @@ elif page == "Products":
             value=int(0),
             step=int(1)
         )
+
         restock_level = st.number_input(
             "Restock Level",
             min_value=int(0),
@@ -568,8 +572,10 @@ elif page == "Products":
             value=int(0),
             step=int(1)
         )
+
         supplier = st.text_input("Supplier")
         description = st.text_area("Description")
+
     if st.button("Save Product", type="primary"):
         if product_name and category:
             new_product = {
@@ -582,10 +588,12 @@ elif page == "Products":
                 "Supplier": supplier,
                 "Description": description
             }
+
             # Save product to DB / CSV
             st.success(f"✅ {product_name} saved successfully!")
         else:
             st.error("⚠️ Product name and category are required.")
+
 
     st.subheader("📄 Product List")
     q = st.text_input("Search (SKU / Name / Category)")
@@ -925,6 +933,7 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
 
 
