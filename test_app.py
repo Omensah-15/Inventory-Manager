@@ -591,76 +591,77 @@ if page == "Dashboard":
 
 elif page == "Products":
     st.header("🧾 Products")
-    if st.session_state.demo_mode:
+    if not st.session_state.authenticated:
         require_auth_warning()
 
-    with st.expander("➕ Add / Edit Product"):
-        sku = st.text_input("SKU *")
-        name = st.text_input("Name *")
+    with st.expander("➕ Add / Edit Product", expanded=False):
+        # unique keys and consistent numeric types
+        sku = st.text_input("SKU *", key="prod_sku")
+        name = st.text_input("Name *", key="prod_name")
         colA, colB, colC = st.columns(3)
-        with colA: category = st.text_input("Category")
-        with colB: supplier_name = st.text_input("Supplier")
-        with colC: reorder_level = st.number_input("Reorder Level", 0, 10**9, 0, step=1)
+        with colA:
+            category = st.text_input("Category", key="prod_category")
+        with colB:
+            supplier_name = st.text_input("Supplier", key="prod_supplier")
+        with colC:
+            reorder_level = st.number_input("Reorder Level", min_value=0, max_value=10**9, value=0, step=1, key="prod_reorder")
         col1, col2, col3 = st.columns(3)
-        with col1: cost_price = st.number_input("Cost Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
-        with col2: sell_price = st.number_input("Sell Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
-        with col3: qty = st.number_input("Initial Quantity", 0, 10**9, 0, step=1)
+        with col1:
+            cost_price = st.number_input("Cost Price", min_value=0.0, max_value=float(10**12), value=0.0, step=0.01, format="%.2f", key="prod_cost")
+        with col2:
+            sell_price = st.number_input("Sell Price", min_value=0.0, max_value=float(10**12), value=0.0, step=0.01, format="%.2f", key="prod_sell")
+        with col3:
+            qty = st.number_input("Initial Quantity", min_value=0, max_value=10**9, value=0, step=1, key="prod_qty")
 
-        disabled = not is_admin() or st.session_state.demo_mode
-        if st.button("Save Product", type="primary", disabled=disabled):
-            try:
-                pid = upsert_product(
-                    sku.strip(), name.strip(), category.strip(), supplier_name.strip(),
-                    float(cost_price), float(sell_price), int(qty), int(reorder_level)
-                )
-                st.success(f"Saved product (ID: {pid}).")
-                st.experimental_rerun()
-            except PermissionError:
+        disabled = (not st.session_state.authenticated)
+        if st.button("Save Product", key="save_product_btn", disabled=disabled):
+            if disabled:
                 require_auth_warning()
-            except ValueError:
-                pass
+            else:
+                try:
+                    pid = upsert_product(st.session_state.username, sku.strip(), name.strip(), category.strip(), supplier_name.strip(), float(cost_price), float(sell_price), int(qty), int(reorder_level))
+                    st.success(f"Saved product (ID: {pid}).")
+                except sqlite3.IntegrityError:
+                    st.error("SKU already exists. Use a unique SKU.")
+                except Exception as e:
+                    st.error(str(e))
 
     st.subheader("📄 Product List")
-    q = st.text_input("Search (SKU / Name / Category)")
-    page_num = st.number_input("Page", min_value=1, value=1, step=1)
+    q = st.text_input("Search (SKU / Name / Category)", key="prod_search")
+    page_num = st.number_input("Page", min_value=1, value=1, step=1, key="prod_page")
     page_size = 50
 
-    if st.session_state.demo_mode:
-        all_products = get_demo_products()
+    if not st.session_state.authenticated:
+        all_products = pd.DataFrame()  # empty preview (or show demo if you want)
     else:
-        all_products = fetch_df("""
-            SELECT p.product_id, p.sku, p.name, p.category,
-                   (SELECT name FROM suppliers s WHERE s.supplier_id=p.supplier_id) as supplier,
-                   p.cost_price, p.sell_price, p.qty, p.reorder_level, p.created_at
-            FROM products p WHERE p.organization=? ORDER BY p.created_at DESC;
-        """, (current_org(),))
+        all_products = list_products(st.session_state.username)
 
     filtered = all_products
-    if q:
+    if q and not all_products.empty:
         ql = q.strip().lower()
         filtered = all_products[
-            all_products.apply(lambda r: ql in str(r["sku"]).lower()
-                                         or ql in str(r["name"]).lower()
-                                         or ql in str(r.get("category","")).lower(), axis=1)
+            all_products.apply(lambda r: ql in str(r["sku"]).lower() or ql in str(r["name"]).lower() or ql in str(r.get("category", "")).lower(), axis=1)
         ]
-    total = len(filtered)
+
+    total = 0 if filtered is None or filtered.empty else len(filtered)
     total_pages = max(1, -(-total // page_size))
     page_num = min(page_num, total_pages)
     start = (page_num - 1) * page_size
-    df_page = filtered.iloc[start:start+page_size]
+    df_page = filtered.iloc[start : start + page_size] if total > 0 else pd.DataFrame()
+
     st.caption(f"Showing {len(df_page)} items — page {page_num}/{total_pages} — {total} total matching")
     st.dataframe(df_page, use_container_width=True, hide_index=True)
 
     # Delete
-    if not st.session_state.demo_mode and is_admin() and not df_page.empty:
-        st.markdown('<div class="block-space"></div>', unsafe_allow_html=True)
-        del_sku = st.selectbox("Delete product by SKU", options=["-- select --"] + df_page["sku"].astype(str).tolist())
-        if st.button("Delete", type="secondary") and del_sku != "-- select --":
-            run_query("DELETE FROM products WHERE sku=? AND organization=?;", (del_sku, current_org()))
-            log_audit("delete_product", f"sku={del_sku}")
+    if st.session_state.authenticated and not df_page.empty:
+        st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
+        del_sku = st.selectbox("Delete product by SKU", options=["-- select --"] + df_page["sku"].astype(str).tolist(), key="del_sku_select")
+        if st.button("Delete", key="del_product_btn") and del_sku != "-- select --":
+            delete_product(st.session_state.username, del_sku)
             st.warning(f"Deleted product SKU {del_sku}")
             st.experimental_rerun()
 
+## Sale & Restock Page
 elif page == "Sales & Restock":
     st.header("🧾 Sales & Restock")
     if st.session_state.demo_mode:
