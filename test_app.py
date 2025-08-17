@@ -539,53 +539,142 @@ def require_login_message():
     st.warning("You're in demo/public preview. Please log in to manage real data.")
 
 # ---------------------------
-# PAGES
+# Dashb
 # ---------------------------
 if page == "Dashboard":
+    # Initialize data based on auth state
     if st.session_state.demo_mode:
         st.markdown('<div class="hero"><h1>InvyPro — Inventory Manager</h1><p class="muted">Sign up or log in to manage your inventory. Below is a demo preview.</p></div>', unsafe_allow_html=True)
         prods = demo_products_df()
         txns = demo_transactions_df()
     else:
-        prods = fetch_df("SELECT sku,name,category,cost_price,sell_price,qty,reorder_level,created_at FROM products WHERE organization=? ORDER BY created_at DESC;", (current_org(),))
+        prods = products_df(for_search=True)
         txns = transactions_df(90)
+        if prods.empty and txns.empty:
+            st.markdown('<div class="hero"><h1>Welcome to InvyPro!</h1><p class="muted">Get started by adding your first products and transactions.</p></div>', unsafe_allow_html=True)
 
-    # KPIs
-    if prods.empty:
-        total_skus = 0
-        stock_value = f"{st.session_state.currency} 0.00"
-        low_stock = 0
+    # ---------------------------
+    # KPIs Section
+    # ---------------------------
+    st.subheader("📊 Key Metrics")
+    
+    if st.session_state.demo_mode:
+        # Demo KPIs
+        kpis = {
+            'total_skus': 3,
+            'stock_value': f"{st.session_state.currency} 690.00",
+            'low_stock': 0,
+            'sales_rev_30d': f"{st.session_state.currency} 55.00"
+        }
     else:
-        total_skus = len(prods)
-        stock_value_val = float((prods["qty"] * prods["cost_price"]).sum()) if "qty" in prods.columns else 0.0
-        stock_value = f"{st.session_state.currency} {stock_value_val:,.2f}"
-        low_stock = int((prods["qty"] <= prods["reorder_level"]).sum()) if "reorder_level" in prods.columns else 0
-    sales_rev = float(txns[txns["type"] == "sale"]["amount"].sum()) if not txns.empty else 0.0
+        # Real KPIs
+        kpis = calc_kpis(st.session_state.currency)
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(f'<div class="report-card"><div class="small-label">Total SKUs</div><div class="big-num">{total_skus}</div></div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown(f'<div class="report-card"><div class="small-label">Stock Value</div><div class="big-num">{stock_value}</div></div>', unsafe_allow_html=True)
-    with c3:
-        cls = "badge low" if low_stock > 0 else "badge ok"
-        txt = "Action needed" if low_stock > 0 else "All good"
-        st.markdown(f'<div class="report-card"><div class="small-label">Low-Stock Items</div><div class="big-num">{low_stock}</div><div class="{cls}">{txt}</div></div>', unsafe_allow_html=True)
-    with c4:
-        st.markdown(f'<div class="report-card"><div class="small-label">Sales (Last 90d)</div><div class="big-num">{st.session_state.currency} {sales_rev:,.2f}</div></div>', unsafe_allow_html=True)
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+    with kpi1:
+        st.markdown(f'<div class="report-card"><div class="small-label">Total SKUs</div><div class="big-num">{kpis["total_skus"]}</div></div>', unsafe_allow_html=True)
+    with kpi2:
+        st.markdown(f'<div class="report-card"><div class="small-label">Stock Value</div><div class="big-num">{kpis["stock_value"]}</div></div>', unsafe_allow_html=True)
+    with kpi3:
+        cls = "badge low" if kpis["low_stock"] > 0 else "badge ok"
+        txt = "Action needed" if kpis["low_stock"] > 0 else "All good"
+        st.markdown(f'<div class="report-card"><div class="small-label">Low-Stock Items</div><div class="big-num">{kpis["low_stock"]}</div><div class="{cls}">{txt}</div></div>', unsafe_allow_html=True)
+    with kpi4:
+        st.markdown(f'<div class="report-card"><div class="small-label">Sales (Last 30d)</div><div class="big-num">{kpis["sales_rev_30d"]}</div></div>', unsafe_allow_html=True)
 
+    # ---------------------------
+    # Visualizations Section
+    # ---------------------------
     st.divider()
-    if txns.empty:
-        st.info("No sales yet.")
+    st.subheader("📈 Inventory Analytics")
+    
+    if not st.session_state.demo_mode and prods.empty:
+        st.info("No products yet. Add products to see analytics.")
     else:
-        sales = txns[txns["type"] == "sale"].copy()
-        sales["date"] = pd.to_datetime(sales["created_at"]).dt.date
-        trend = sales.groupby("date", as_index=False)["amount"].sum()
-        chart = alt.Chart(trend).mark_line(point=True).encode(x="date:T", y=alt.Y("amount:Q", title=f"Revenue ({st.session_state.currency})"), tooltip=["date:T", alt.Tooltip("amount:Q", format=",.2f")]).properties(height=300, title="Sales Revenue")
-        st.altair_chart(chart, use_container_width=True)
+        viz_col1, viz_col2 = st.columns(2)
+        
+        with viz_col1:
+            # Stock Level Chart
+            st.markdown("**Stock Levels**")
+            if st.session_state.demo_mode:
+                chart_data = prods[['name', 'qty', 'reorder_level']].rename(columns={'name': 'Product', 'qty': 'Quantity'})
+            else:
+                chart_data = prods[['name', 'qty', 'reorder_level']].rename(columns={'name': 'Product', 'qty': 'Quantity'})
+            
+            if not chart_data.empty:
+                chart = alt.Chart(chart_data).mark_bar().encode(
+                    x='Product:N',
+                    y='Quantity:Q',
+                    color=alt.condition(
+                        alt.datum.Quantity <= alt.datum.reorder_level,
+                        alt.value('#ef4444'),  # red
+                        alt.value('#22c55e')   # green
+                    ),
+                    tooltip=['Product', 'Quantity', 'reorder_level']
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.info("No data to display")
 
-    st.subheader("Products")
-    st.dataframe(prods if not prods.empty else demo_products_df(), use_container_width=True, hide_index=True)
+        with viz_col2:
+            # Sales Trend Chart (only shows when not in demo mode and has transactions)
+            st.markdown("**Sales Trend**")
+            if st.session_state.demo_mode:
+                sales_data = txns[txns['type'] == 'sale'].copy()
+                if not sales_data.empty:
+                    sales_data['date'] = pd.to_datetime(sales_data['created_at']).dt.date
+                    trend_data = sales_data.groupby('date', as_index=False)['amount'].sum()
+            else:
+                sales_data = txns[txns['type'] == 'sale'].copy()
+                if not sales_data.empty:
+                    sales_data['date'] = pd.to_datetime(sales_data['created_at']).dt.date
+                    trend_data = sales_data.groupby('date', as_index=False)['amount'].sum()
+            
+            if not sales_data.empty:
+                chart = alt.Chart(trend_data).mark_line(point=True).encode(
+                    x='date:T',
+                    y=alt.Y('amount:Q', title=f"Revenue ({st.session_state.currency})"),
+                    tooltip=['date:T', alt.Tooltip('amount:Q', format=",.2f")]
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.info("No sales data yet")
+
+    # ---------------------------
+    # Products Table Section
+    # ---------------------------
+    st.divider()
+    st.subheader("📦 Product Inventory")
+    
+    if st.session_state.demo_mode:
+        st.dataframe(prods, use_container_width=True, hide_index=True)
+    else:
+        if prods.empty:
+            st.info("No products found. Add your first product in the Products section!")
+        else:
+            # Show low stock items first
+            low_stock_prods = prods[prods['qty'] <= prods['reorder_level']]
+            if not low_stock_prods.empty:
+                st.warning(f"⚠️ {len(low_stock_prods)} product(s) below reorder level")
+                st.dataframe(low_stock_prods, use_container_width=True, hide_index=True)
+                st.markdown("---")
+                st.markdown("**All Products**")
+            
+            st.dataframe(prods, use_container_width=True, hide_index=True)
+
+    # ---------------------------
+    # Recent Transactions Section
+    # ---------------------------
+    st.divider()
+    st.subheader("🔄 Recent Transactions")
+    
+    if st.session_state.demo_mode:
+        st.dataframe(txns, use_container_width=True, hide_index=True)
+    else:
+        if txns.empty:
+            st.info("No transactions yet. Record your first sale or restock!")
+        else:
+            st.dataframe(txns, use_container_width=True, hide_index=True)
 
 
 # =======================
