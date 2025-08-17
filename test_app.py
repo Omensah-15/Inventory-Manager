@@ -586,57 +586,80 @@ if page == "Dashboard":
 
     st.subheader("Products")
     st.dataframe(prods if not prods.empty else demo_products_df(), use_container_width=True, hide_index=True)
+    
+## PRODUCTS
 
 elif page == "Products":
     st.header("🧾 Products")
     if st.session_state.demo_mode:
-        require_login_message()
+        require_auth_warning()
+
     with st.expander("➕ Add / Edit Product"):
-        # unique widget keys
-        sku = st.text_input("SKU *", key="prod_sku")
-        name = st.text_input("Name *", key="prod_name")
+        sku = st.text_input("SKU *")
+        name = st.text_input("Name *")
         colA, colB, colC = st.columns(3)
-        with colA:
-            category = st.text_input("Category", key="prod_category")
-        with colB:
-            supplier_name = st.text_input("Supplier", key="prod_supplier")
-        with colC:
-            reorder_level = st.number_input("Reorder Level", min_value=0, max_value=10**9, value=0, step=1, key="prod_reorder")
+        with colA: category = st.text_input("Category")
+        with colB: supplier_name = st.text_input("Supplier")
+        with colC: reorder_level = st.number_input("Reorder Level", 0, 10**9, 0, step=1)
         col1, col2, col3 = st.columns(3)
-        with col1:
-            cost_price = st.number_input("Cost Price", min_value=0.0, max_value=10**12, value=0.0, step=0.01, format="%.2f", key="prod_cost")
-        with col2:
-            sell_price = st.number_input("Sell Price", min_value=0.0, max_value=10**12, value=0.0, step=0.01, format="%.2f", key="prod_sell")
-        with col3:
-            qty = st.number_input("Initial Quantity", min_value=0, max_value=10**9, value=0, step=1, key="prod_qty")
+        with col1: cost_price = st.number_input("Cost Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
+        with col2: sell_price = st.number_input("Sell Price", 0.0, 10**12, 0.0, step=0.01, format="%.2f")
+        with col3: qty = st.number_input("Initial Quantity", 0, 10**9, 0, step=1)
 
-        disabled = st.session_state.demo_mode or not st.session_state.authenticated
-        if st.button("Save Product", key="save_product_btn", disabled=disabled):
-            if disabled:
-                require_login_message()
-            else:
-                try:
-                    pid = upsert_product(sku.strip(), name.strip(), category.strip(), supplier_name.strip(), float(cost_price), float(sell_price), int(qty), int(reorder_level))
-                    st.success(f"Saved product (ID: {pid})")
-                    log_audit("ui_save_product", f"sku={sku}")
-                except Exception as e:
-                    st.error(str(e))
+        disabled = not is_admin() or st.session_state.demo_mode
+        if st.button("Save Product", type="primary", disabled=disabled):
+            try:
+                pid = upsert_product(
+                    sku.strip(), name.strip(), category.strip(), supplier_name.strip(),
+                    float(cost_price), float(sell_price), int(qty), int(reorder_level)
+                )
+                st.success(f"Saved product (ID: {pid}).")
+                st.experimental_rerun()
+            except PermissionError:
+                require_auth_warning()
+            except ValueError:
+                pass
 
-    st.subheader("Product Catalog")
-    q = st.text_input("Search (SKU/Name/Category)", key="prod_search")
-    page_num = st.number_input("Page", min_value=1, value=1, step=1, key="prod_page")
+    st.subheader("📄 Product List")
+    q = st.text_input("Search (SKU / Name / Category)")
+    page_num = st.number_input("Page", min_value=1, value=1, step=1)
     page_size = 50
 
     if st.session_state.demo_mode:
-        all_products = demo_products_df()
+        all_products = get_demo_products()
     else:
-        all_products = products_df(page=page_num, page_size=page_size, for_search=True)
+        all_products = fetch_df("""
+            SELECT p.product_id, p.sku, p.name, p.category,
+                   (SELECT name FROM suppliers s WHERE s.supplier_id=p.supplier_id) as supplier,
+                   p.cost_price, p.sell_price, p.qty, p.reorder_level, p.created_at
+            FROM products p WHERE p.organization=? ORDER BY p.created_at DESC;
+        """, (current_org(),))
+
+    filtered = all_products
     if q:
-        ql = q.lower()
-        all_products = all_products[all_products.apply(lambda r: ql in str(r.get("sku","")).lower() or ql in str(r.get("name","")).lower() or ql in str(r.get("category","")).lower(), axis=1)]
-    total = len(all_products)
-    st.caption(f"{total} matching")
-    st.dataframe(all_products, use_container_width=True, hide_index=True)
+        ql = q.strip().lower()
+        filtered = all_products[
+            all_products.apply(lambda r: ql in str(r["sku"]).lower()
+                                         or ql in str(r["name"]).lower()
+                                         or ql in str(r.get("category","")).lower(), axis=1)
+        ]
+    total = len(filtered)
+    total_pages = max(1, -(-total // page_size))
+    page_num = min(page_num, total_pages)
+    start = (page_num - 1) * page_size
+    df_page = filtered.iloc[start:start+page_size]
+    st.caption(f"Showing {len(df_page)} items — page {page_num}/{total_pages} — {total} total matching")
+    st.dataframe(df_page, use_container_width=True, hide_index=True)
+
+    # Delete
+    if not st.session_state.demo_mode and is_admin() and not df_page.empty:
+        st.markdown('<div class="block-space"></div>', unsafe_allow_html=True)
+        del_sku = st.selectbox("Delete product by SKU", options=["-- select --"] + df_page["sku"].astype(str).tolist())
+        if st.button("Delete", type="secondary") and del_sku != "-- select --":
+            run_query("DELETE FROM products WHERE sku=? AND organization=?;", (del_sku, current_org()))
+            log_audit("delete_product", f"sku={del_sku}")
+            st.warning(f"Deleted product SKU {del_sku}")
+            st.experimental_rerun()
 
 elif page == "Sales & Restock":
     st.header("🧾 Sales & Restock")
