@@ -682,69 +682,72 @@ if page == "Dashboard":
 # =======================
 elif page == "Products":
     st.header("🧾 Products")
-    
-    # Initialize database with correct schema
-    def init_products_db():
-        with db_session() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS products (
-                    product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    organization TEXT NOT NULL,
-                    sku TEXT NOT NULL,
-                    name TEXT NOT NULL,
-                    category TEXT,
-                    supplier_id INTEGER,
-                    cost_price REAL DEFAULT 0,
-                    sell_price REAL DEFAULT 0,
-                    qty INTEGER DEFAULT 0,
-                    reorder_level INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(supplier_id) REFERENCES suppliers(supplier_id) ON DELETE SET NULL,
-                    UNIQUE(organization, sku)
-            """)
 
-    init_products_db()
-
-    # Product management functions
-    def add_product(sku, name, category, supplier_name, cost_price, sell_price, qty, reorder_level):
+    # Product management functions using your existing schema
+    def upsert_product(sku, name, category, supplier_name, cost_price, sell_price, qty, reorder_level):
+        """Add or update a product using your existing database schema"""
         org = current_org()
         if not org:
-            raise PermissionError("Organization not set")
+            raise PermissionError("Not authenticated")
         
         supplier_id = None
         if supplier_name:
+            # Use your existing upsert_supplier function
             supplier_id = upsert_supplier(supplier_name.strip(), None, None)
         
         with db_session() as conn:
-            conn.execute("""
-                INSERT INTO products (
-                    organization, sku, name, category, supplier_id,
-                    cost_price, sell_price, qty, reorder_level, created_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?)
-                ON CONFLICT(organization, sku) DO UPDATE SET
-                    name=excluded.name,
-                    category=excluded.category,
-                    supplier_id=excluded.supplier_id,
-                    cost_price=excluded.cost_price,
-                    sell_price=excluded.sell_price,
-                    qty=excluded.qty,
-                    reorder_level=excluded.reorder_level
-            """, (
-                org, sku.strip(), name.strip(), category.strip(), supplier_id,
-                float(cost_price), float(sell_price), int(qty), int(reorder_level), now_iso()
-            ))
+            # Check if product exists
+            existing = conn.execute(
+                "SELECT product_id FROM products WHERE organization=? AND sku=?",
+                (org, sku.strip())
+            ).fetchone()
+            
+            if existing:
+                # Update existing product
+                conn.execute("""
+                    UPDATE products SET
+                        name=?,
+                        category=?,
+                        supplier_id=?,
+                        cost_price=?,
+                        sell_price=?,
+                        qty=?,
+                        reorder_level=?
+                    WHERE product_id=?
+                """, (
+                    name.strip(), category.strip(), supplier_id,
+                    float(cost_price), float(sell_price), int(qty), int(reorder_level),
+                    existing["product_id"]
+                ))
+            else:
+                # Insert new product
+                conn.execute("""
+                    INSERT INTO products (
+                        organization, sku, name, category, supplier_id,
+                        cost_price, sell_price, qty, reorder_level
+                    ) VALUES (?,?,?,?,?,?,?,?,?)
+                """, (
+                    org, sku.strip(), name.strip(), category.strip(), supplier_id,
+                    float(cost_price), float(sell_price), int(qty), int(reorder_level)
+                ))
+            
             log_audit("product_updated", f"sku={sku}")
 
     def delete_product(sku):
+        """Delete a product from your database"""
         org = current_org()
         if not org:
-            raise PermissionError("Organization not set")
+            raise PermissionError("Not authenticated")
         
         with db_session() as conn:
-            conn.execute("DELETE FROM products WHERE organization=? AND sku=?", (org, sku))
+            conn.execute(
+                "DELETE FROM products WHERE organization=? AND sku=?",
+                (org, sku)
+            )
             log_audit("product_deleted", f"sku={sku}")
 
     def get_products(search_term=None, page=1, page_size=20):
+        """Get paginated products with search"""
         org = current_org()
         if not org:
             return pd.DataFrame()
@@ -802,7 +805,7 @@ elif page == "Products":
                     st.error("SKU and Name are required fields")
                 else:
                     try:
-                        add_product(
+                        upsert_product(
                             sku, name, category, supplier_name,
                             cost_price, sell_price, qty, reorder_level
                         )
@@ -831,14 +834,9 @@ elif page == "Products":
             display_df['cost_price'] = display_df['cost_price'].apply(lambda x: f"{st.session_state.currency} {x:,.2f}")
             display_df['sell_price'] = display_df['sell_price'].apply(lambda x: f"{st.session_state.currency} {x:,.2f}")
             
-            # Highlight low stock items
-            def highlight_low_stock(row):
-                if row['qty'] <= row['reorder_level']:
-                    return ['background-color: #ffcccc'] * len(row)
-                return [''] * len(row)
-            
+            # Display the dataframe
             st.dataframe(
-                display_df.style.apply(highlight_low_stock, axis=1),
+                display_df,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
@@ -1094,4 +1092,5 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
