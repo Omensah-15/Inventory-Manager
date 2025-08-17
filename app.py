@@ -682,113 +682,186 @@ if page == "Dashboard":
 # =======================
 elif page == "Products":
     st.header("🧾 Products")
+    
+    # Initialize database with correct schema
+    def init_products_db():
+        with db_session() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS products (
+                    product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization TEXT NOT NULL,
+                    sku TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    category TEXT,
+                    supplier_id INTEGER,
+                    cost_price REAL DEFAULT 0,
+                    sell_price REAL DEFAULT 0,
+                    qty INTEGER DEFAULT 0,
+                    reorder_level INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(supplier_id) REFERENCES suppliers(supplier_id) ON DELETE SET NULL,
+                    UNIQUE(organization, sku)
+            """)
 
-    # --- Database setup ---
-    def init_db():
-        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
-        c = conn.cursor()
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS products (
-                sku TEXT PRIMARY KEY,
-                name TEXT,
-                category TEXT,
-                supplier TEXT,
-                cost_price REAL,
-                sell_price REAL,
-                qty INTEGER,
-                reorder_level INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
-        conn.close()
+    init_products_db()
 
-    def add_product(sku, name, category, supplier, cost_price, sell_price, qty, reorder_level):
-        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
-        c = conn.cursor()
-        c.execute("""
-            INSERT OR REPLACE INTO products (sku, name, category, supplier, cost_price, sell_price, qty, reorder_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (sku, name, category, supplier, cost_price, sell_price, qty, reorder_level))
-        conn.commit()
-        conn.close()
-
-    def list_products():
-        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
-        df = pd.read_sql_query("SELECT * FROM products ORDER BY created_at DESC", conn)
-        conn.close()
-        return df
+    # Product management functions
+    def add_product(sku, name, category, supplier_name, cost_price, sell_price, qty, reorder_level):
+        org = current_org()
+        if not org:
+            raise PermissionError("Organization not set")
+        
+        supplier_id = None
+        if supplier_name:
+            supplier_id = upsert_supplier(supplier_name.strip(), None, None)
+        
+        with db_session() as conn:
+            conn.execute("""
+                INSERT INTO products (
+                    organization, sku, name, category, supplier_id,
+                    cost_price, sell_price, qty, reorder_level, created_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(organization, sku) DO UPDATE SET
+                    name=excluded.name,
+                    category=excluded.category,
+                    supplier_id=excluded.supplier_id,
+                    cost_price=excluded.cost_price,
+                    sell_price=excluded.sell_price,
+                    qty=excluded.qty,
+                    reorder_level=excluded.reorder_level
+            """, (
+                org, sku.strip(), name.strip(), category.strip(), supplier_id,
+                float(cost_price), float(sell_price), int(qty), int(reorder_level), now_iso()
+            ))
+            log_audit("product_updated", f"sku={sku}")
 
     def delete_product(sku):
-        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
-        c = conn.cursor()
-        c.execute("DELETE FROM products WHERE sku=?", (sku,))
-        conn.commit()
-        conn.close()
+        org = current_org()
+        if not org:
+            raise PermissionError("Organization not set")
+        
+        with db_session() as conn:
+            conn.execute("DELETE FROM products WHERE organization=? AND sku=?", (org, sku))
+            log_audit("product_deleted", f"sku={sku}")
 
-    # Ensure DB is ready
-    init_db()
+    def get_products(search_term=None, page=1, page_size=20):
+        org = current_org()
+        if not org:
+            return pd.DataFrame()
+        
+        offset = (page - 1) * page_size
+        query = """
+            SELECT 
+                p.product_id, p.sku, p.name, p.category, 
+                s.name as supplier, p.cost_price, p.sell_price, 
+                p.qty, p.reorder_level, p.created_at
+            FROM products p
+            LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+            WHERE p.organization=?
+        """
+        params = [org]
+        
+        if search_term:
+            query += " AND (p.sku LIKE ? OR p.name LIKE ? OR p.category LIKE ?)"
+            params.extend([f"%{search_term}%"]*3)
+        
+        query += " ORDER BY p.created_at DESC LIMIT ? OFFSET ?"
+        params.extend([page_size, offset])
+        
+        return fetch_df(query, tuple(params))
 
-    # --- Add / Edit Product ---
-    with st.expander("➕ Add / Edit Product"):
-        sku = st.text_input("SKU *")
-        name = st.text_input("Name *")
-        colA, colB, colC = st.columns(3)
-        with colA: category = st.text_input("Category")
-        with colB: supplier_name = st.text_input("Supplier")
-        with colC: reorder_level = st.number_input("Reorder Level", min_value=0, max_value=10**9, value=0, step=1)
+    # UI Components
+    with st.expander("➕ Add/Edit Product", expanded=True):
+        with st.form("product_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                sku = st.text_input("SKU *", key="prod_sku")
+            with col2:
+                name = st.text_input("Name *", key="prod_name")
+            
+            col3, col4 = st.columns(2)
+            with col3:
+                category = st.text_input("Category", key="prod_category")
+            with col4:
+                supplier_name = st.text_input("Supplier", key="prod_supplier")
+            
+            col5, col6, col7 = st.columns(3)
+            with col5:
+                cost_price = st.number_input("Cost Price", min_value=0.0, value=0.0, step=0.01, format="%.2f", key="prod_cost")
+            with col6:
+                sell_price = st.number_input("Sell Price", min_value=0.0, value=0.0, step=0.01, format="%.2f", key="prod_sell")
+            with col7:
+                reorder_level = st.number_input("Reorder Level", min_value=0, value=0, step=1, key="prod_reorder")
+            
+            qty = st.number_input("Initial Quantity", min_value=0, value=0, step=1, key="prod_qty")
+            
+            submitted = st.form_submit_button("💾 Save Product", use_container_width=True)
+            
+            if submitted:
+                if not sku or not name:
+                    st.error("SKU and Name are required fields")
+                else:
+                    try:
+                        add_product(
+                            sku, name, category, supplier_name,
+                            cost_price, sell_price, qty, reorder_level
+                        )
+                        st.success("Product saved successfully!")
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"Error saving product: {str(e)}")
 
-        col1, col2, col3 = st.columns(3)
-        with col1: cost_price = st.number_input("Cost Price", min_value=0.0, max_value=float(1e12), value=0.0, step=0.01, format="%.2f")
-        with col2: sell_price = st.number_input("Sell Price", min_value=0.0, max_value=float(1e12), value=0.0, step=0.01, format="%.2f")
-        with col3: qty = st.number_input("Initial Quantity", min_value=0, max_value=10**9, value=0, step=1)
-
-        if st.button("💾 Save Product", type="primary"):
-            if not sku or not name:
-                st.error("SKU and Name are required.")
-            else:
-                add_product(
-                    sku.strip(), name.strip(), category.strip(), supplier_name.strip(),
-                    float(cost_price), float(sell_price), int(qty), int(reorder_level)
+    # Product List Section
+    st.subheader("📄 Product Inventory")
+    
+    if st.session_state.demo_mode:
+        st.warning("Please log in to manage products")
+    else:
+        search_term = st.text_input("🔍 Search products", key="prod_search")
+        page_size = st.selectbox("Items per page", [10, 20, 50, 100], index=1, key="prod_page_size")
+        page_num = st.number_input("Page", min_value=1, value=1, step=1, key="prod_page_num")
+        
+        products = get_products(search_term, page_num, page_size)
+        
+        if products.empty:
+            st.info("No products found. Add your first product above!")
+        else:
+            # Format currency columns
+            display_df = products.copy()
+            display_df['cost_price'] = display_df['cost_price'].apply(lambda x: f"{st.session_state.currency} {x:,.2f}")
+            display_df['sell_price'] = display_df['sell_price'].apply(lambda x: f"{st.session_state.currency} {x:,.2f}")
+            
+            # Highlight low stock items
+            def highlight_low_stock(row):
+                if row['qty'] <= row['reorder_level']:
+                    return ['background-color: #ffcccc'] * len(row)
+                return [''] * len(row)
+            
+            st.dataframe(
+                display_df.style.apply(highlight_low_stock, axis=1),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "product_id": None,
+                    "created_at": st.column_config.DatetimeColumn("Created At")
+                }
+            )
+            
+            # Delete product option
+            with st.expander("🗑️ Delete Product", expanded=False):
+                sku_to_delete = st.selectbox(
+                    "Select product to delete",
+                    options=["-- select --"] + products['sku'].tolist(),
+                    key="prod_delete_select"
                 )
-                st.success(f"✅ Product '{name}' saved.")
-                st.experimental_rerun()
-
-    # --- Product List ---
-    st.subheader("📄 Product List")
-    q = st.text_input("Search (SKU / Name / Category)")
-    page_num = st.number_input("Page", min_value=1, value=1, step=1)
-    page_size = 20
-
-    all_products = list_products()
-
-    # Filter
-    filtered = all_products
-    if q:
-        ql = q.strip().lower()
-        filtered = all_products[
-            all_products.apply(lambda r: ql in str(r["sku"]).lower()
-                                         or ql in str(r["name"]).lower()
-                                         or ql in str(r.get("category","")).lower(), axis=1)
-        ]
-
-    total = len(filtered)
-    total_pages = max(1, -(-total // page_size))
-    page_num = min(page_num, total_pages)
-    start = (page_num - 1) * page_size
-    df_page = filtered.iloc[start:start+page_size]
-
-    st.caption(f"Showing {len(df_page)} items — page {page_num}/{total_pages} — {total} total matching")
-    st.dataframe(df_page, use_container_width=True, hide_index=True)
-
-    # --- Delete Product ---
-    if not df_page.empty:
-        st.markdown("---")
-        del_sku = st.selectbox("🗑️ Delete product by SKU", options=["-- select --"] + df_page["sku"].astype(str).tolist())
-        if st.button("Delete", type="secondary") and del_sku != "-- select --":
-            delete_product(del_sku)
-            st.warning(f"❌ Deleted product SKU {del_sku}")
-            st.experimental_rerun()
+                
+                if st.button("Delete Selected", type="secondary", key="prod_delete_btn") and sku_to_delete != "-- select --":
+                    try:
+                        delete_product(sku_to_delete)
+                        st.success(f"Product {sku_to_delete} deleted")
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"Error deleting product: {str(e)}")
             
 
 ## Sale & Restock Page
@@ -1021,3 +1094,4 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
