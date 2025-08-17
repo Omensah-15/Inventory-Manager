@@ -531,60 +531,73 @@ if page == "Dashboard":
 # -------------------------------
 elif page == "Products":
     st.header("🧾 Products")
+    
+    # Initialize session state for form submission if not exists
+    if 'form_submitted' not in st.session_state:
+        st.session_state.form_submitted = False
+    
     with st.expander("+ Add / Edit Product"):
-        col1, col2 = st.columns(2)
-        with col1:
-            sku = st.text_input("SKU *", help="Unique stock keeping unit identifier")
-            product_name = st.text_input("Product Name *")
-            category = st.text_input("Category")
-            cost_price = st.number_input(
-                "Cost Price",
-                min_value=float(0.0),
-                value=float(0.0),
-                step=float(0.01),
-                format="%.2f"
-            )
-        with col2:
-            sell_price = st.number_input(
-                "Selling Price",
-                min_value=float(0.0),
-                value=float(0.0),
-                step=float(0.01),
-                format="%.2f"
-            )
-            quantity = st.number_input(
-                "Quantity",
-                min_value=int(0),
-                value=int(0),
-                step=int(1)
-            )
-            reorder_level = st.number_input(
-                "Reorder Level",
-                min_value=int(0),
-                value=int(0),
-                step=int(1)
-            )
-            supplier_name = st.text_input("Supplier")
+        with st.form(key='product_form'):
+            col1, col2 = st.columns(2)
+            with col1:
+                sku = st.text_input("SKU *", help="Unique stock keeping unit identifier")
+                product_name = st.text_input("Product Name *")
+                category = st.text_input("Category")
+                cost_price = st.number_input(
+                    "Cost Price",
+                    min_value=float(0.0),
+                    value=float(0.0),
+                    step=float(0.01),
+                    format="%.2f"
+                )
+            with col2:
+                sell_price = st.number_input(
+                    "Selling Price",
+                    min_value=float(0.0),
+                    value=float(0.0),
+                    step=float(0.01),
+                    format="%.2f"
+                )
+                quantity = st.number_input(
+                    "Quantity",
+                    min_value=int(0),
+                    value=int(0),
+                    step=int(1)
+                )
+                reorder_level = st.number_input(
+                    "Reorder Level",
+                    min_value=int(0),
+                    value=int(0),
+                    step=int(1)
+                )
+                supplier_name = st.text_input("Supplier")
 
-        if st.button("Save Product", type="primary"):
-            if product_name and sku:  # SKU and name are required
-                try:
-                    product_id = upsert_product(
-                        sku=sku.strip(),
-                        name=product_name.strip(),
-                        category=category.strip() if category else "",
-                        supplier_name=supplier_name.strip() if supplier_name else "",
-                        cost_price=float(cost_price),
-                        sell_price=float(sell_price),
-                        qty=int(quantity),
-                        reorder_level=int(reorder_level)
-                    )
-                    st.success(f"✅ Product saved successfully! (ID: {product_id})")
-                    st.experimental_rerun()  # Refresh the page to show the new product
-                except ValueError as e:
-                    st.error(f"Error saving product: {str(e)}")
-            else:
-                st.error("⚠️ SKU and Product Name are required fields.")
+            submitted = st.form_submit_button("Save Product", type="primary")
+            if submitted:
+                if product_name and sku:  # SKU and name are required
+                    try:
+                        product_id = upsert_product(
+                            sku=sku.strip(),
+                            name=product_name.strip(),
+                            category=category.strip() if category else "",
+                            supplier_name=supplier_name.strip() if supplier_name else "",
+                            cost_price=float(cost_price),
+                            sell_price=float(sell_price),
+                            qty=int(quantity),
+                            reorder_level=int(reorder_level)
+                        )
+                        st.success(f"✅ Product saved successfully! (ID: {product_id})")
+                        st.session_state.form_submitted = True
+                    except ValueError as e:
+                        st.error(f"Error saving product: {str(e)}")
+                else:
+                    st.error("⚠️ SKU and Product Name are required fields.")
+
+    # Refresh the page after form submission
+    if st.session_state.get('form_submitted', False):
+        time.sleep(1)  # Small delay to show the success message
+        st.session_state.form_submitted = False
+        st.experimental_rerun()
 
     st.subheader("📄 Product List")
     q = st.text_input("Search (SKU / Name / Category)")
@@ -621,13 +634,18 @@ elif page == "Products":
     # Delete product
     if is_admin and not df_page.empty:
         st.markdown('<div class="block-space"></div>', unsafe_allow_html=True)
-        del_sku = st.selectbox("Delete product by SKU", options=["-- select --"] + df_page["sku"].tolist())
-        if st.button("Delete", type="secondary") and del_sku != "-- select --":
-            run_query("DELETE FROM products WHERE sku = ?;", (del_sku,))
-            log_audit("delete_product", f"sku={del_sku}")
-            st.warning(f"Deleted product SKU {del_sku}")
-            st.experimental_rerun()
-
+        with st.form(key='delete_form'):
+            del_sku = st.selectbox("Delete product by SKU", options=["-- select --"] + df_page["sku"].tolist())
+            submitted_delete = st.form_submit_button("Delete", type="secondary")
+            if submitted_delete and del_sku != "-- select --":
+                run_query("DELETE FROM products WHERE sku = ?;", (del_sku,))
+                log_audit("delete_product", f"sku={del_sku}")
+                st.warning(f"Deleted product SKU {del_sku}")
+                time.sleep(1)  # Small delay to show the message
+                st.experimental_rerun()
+        
+            
+    
 # -------------------------------
 # Page: Sales & Restock
 # -------------------------------
@@ -924,6 +942,7 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
 
 
