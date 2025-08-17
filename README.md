@@ -67,7 +67,9 @@ streamlit run app.py
 ## 📜 License: MIT License — free to use and modify.
 ---
 
-## Author: 
-Developed by Mensah Obed
-📧Email: heavenzlebron7@gmail.com
+## 👨‍💻 Author
+
+**Obed Mensah**  
+*Developed by Mensah Obed*  
+📧 [heavenzlebron7@gmail.com](mailto:heavenzlebron7@gmail.com)
 
