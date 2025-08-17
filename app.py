@@ -532,68 +532,59 @@ if page == "Dashboard":
 elif page == "Products":
     st.header("🧾 Products")
     with st.expander("+ Add / Edit Product"):
-         col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
+        with col1:
+            sku = st.text_input("SKU *", help="Unique stock keeping unit identifier")
+            product_name = st.text_input("Product Name *")
+            category = st.text_input("Category")
+            cost_price = st.number_input(
+                "Cost Price",
+                min_value=float(0.0),
+                value=float(0.0),
+                step=float(0.01),
+                format="%.2f"
+            )
+        with col2:
+            sell_price = st.number_input(
+                "Selling Price",
+                min_value=float(0.0),
+                value=float(0.0),
+                step=float(0.01),
+                format="%.2f"
+            )
+            quantity = st.number_input(
+                "Quantity",
+                min_value=int(0),
+                value=int(0),
+                step=int(1)
+            )
+            reorder_level = st.number_input(
+                "Reorder Level",
+                min_value=int(0),
+                value=int(0),
+                step=int(1)
+            )
+            supplier_name = st.text_input("Supplier")
 
-    with col1:
-        product_name = st.text_input("Product Name")
-        category = st.text_input("Category")
-
-        cost_price = st.number_input(
-            "Cost Price",
-            min_value=float(0.0),
-            max_value=float(10**12),
-            value=float(0.0),
-            step=float(0.01),
-            format="%.2f"
-        )
-
-        selling_price = st.number_input(
-            "Selling Price",
-            min_value=float(0.0),
-            max_value=float(10**12),
-            value=float(0.0),
-            step=float(0.01),
-            format="%.2f"
-        )
-
-    with col2:
-        quantity = st.number_input(
-            "Quantity",
-            min_value=int(0),
-            max_value=int(10**9),
-            value=int(0),
-            step=int(1)
-        )
-
-        restock_level = st.number_input(
-            "Restock Level",
-            min_value=int(0),
-            max_value=int(10**9),
-            value=int(0),
-            step=int(1)
-        )
-
-        supplier = st.text_input("Supplier")
-        description = st.text_area("Description")
-
-    if st.button("Save Product", type="primary"):
-        if product_name and category:
-            new_product = {
-                "Product Name": product_name,
-                "Category": category,
-                "Cost Price": cost_price,
-                "Selling Price": selling_price,
-                "Quantity": quantity,
-                "Restock Level": restock_level,
-                "Supplier": supplier,
-                "Description": description
-            }
-
-            # Save product to DB / CSV
-            st.success(f"✅ {product_name} saved successfully!")
-        else:
-            st.error("⚠️ Product name and category are required.")
-
+        if st.button("Save Product", type="primary"):
+            if product_name and sku:  # SKU and name are required
+                try:
+                    product_id = upsert_product(
+                        sku=sku.strip(),
+                        name=product_name.strip(),
+                        category=category.strip() if category else "",
+                        supplier_name=supplier_name.strip() if supplier_name else "",
+                        cost_price=float(cost_price),
+                        sell_price=float(sell_price),
+                        qty=int(quantity),
+                        reorder_level=int(reorder_level)
+                    )
+                    st.success(f"✅ Product saved successfully! (ID: {product_id})")
+                    st.experimental_rerun()  # Refresh the page to show the new product
+                except ValueError as e:
+                    st.error(f"Error saving product: {str(e)}")
+            else:
+                st.error("⚠️ SKU and Product Name are required fields.")
 
     st.subheader("📄 Product List")
     q = st.text_input("Search (SKU / Name / Category)")
@@ -933,6 +924,7 @@ elif page == "Settings":
             st.experimental_rerun()
         else:
             st.error("Login as admin to reset the database.")
+
 
 
 
