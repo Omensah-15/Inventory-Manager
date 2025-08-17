@@ -596,7 +596,7 @@ elif page == "Products":
 
     # --- Database setup ---
     def init_db():
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
         c = conn.cursor()
         c.execute("""
             CREATE TABLE IF NOT EXISTS products (
@@ -615,7 +615,7 @@ elif page == "Products":
         conn.close()
 
     def add_product(sku, name, category, supplier, cost_price, sell_price, qty, reorder_level):
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
         c = conn.cursor()
         c.execute("""
             INSERT OR REPLACE INTO products (sku, name, category, supplier, cost_price, sell_price, qty, reorder_level)
@@ -625,13 +625,13 @@ elif page == "Products":
         conn.close()
 
     def list_products():
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
         df = pd.read_sql_query("SELECT * FROM products ORDER BY created_at DESC", conn)
         conn.close()
         return df
 
     def delete_product(sku):
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(DB_PATH)  # Changed from DB_FILE to DB_PATH
         c = conn.cursor()
         c.execute("DELETE FROM products WHERE sku=?", (sku,))
         conn.commit()
