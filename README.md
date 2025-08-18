@@ -7,18 +7,71 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 ---
 
 ## Features
-- **Secure login** with environment-based password.
-- **Product management**: Add, edit, delete products.
-- **Sales & restock tracking** with automatic stock updates.
-- **Stock adjustments** with negative stock prevention.
-- **Search & filtering** for quick access to items.
-- **Audit logs** for every action performed.
-- **Data export** to CSV for reporting.
-- **Responsive design** — works on desktop and tablet.
+## Authentication & Security
+- **Secure login system** with PBKDF2 password hashing
+- **Organization-based isolation** - Data only visible to your organization's users
+- **Account lockout** after multiple failed attempts
+- **Session management** with automatic logout
+- **Environment-based configuration** for sensitive settings
+
+## Product Management
+- **Add/edit/delete products** with full details (SKU, name, category, etc.)
+- **Supplier management** - Link products to suppliers
+- **Bulk import/export** via CSV
+- **Low stock alerts** with visual indicators
+- **Product search** by SKU, name, or category
+- **Pagination** for large inventories
+
+## Sales & Inventory Tracking
+- **Record sales** with automatic stock deduction
+- **Restock tracking** with automatic inventory updates
+- **Stock adjustments** for corrections
+- **Negative stock prevention** (configurable)
+- **Transaction history** with timestamps
+- **Financial reporting** - Cost vs. sell price tracking
+
+## Reporting & Analytics
+- **Dashboard overview** with key metrics:
+  - Total SKUs
+  - Inventory value
+  - Low stock items
+  - Sales revenue
+- **Visual charts** for sales trends and stock levels
+- **Custom date filtering** for transactions
+- **Export to CSV** for all data
+
+## System Features
+- **Audit logging** - Every action is recorded
+- **Responsive design** - Works on desktop and tablet
+- **Dark/light mode** support (follows system preference)
+- **Multi-user support** with role-based permissions
+- **Localization** for currency and time zones
+- **Demo mode** for exploring features without login
+
+## Settings & Configuration
+- **Organization settings** management
+- **Currency selection** (supports multiple currencies)
+- **Timezone configuration** for proper time tracking
+- **Negative stock** prevention toggle
+- **Data reset** option for your organization
+
+## Data Management
+- **SQLite database** - Simple single-file storage
+- **Automatic backups** (configurable)
+- **CSV exports** for all tables
+- **Bulk operations** for mass updates
+- **Data integrity checks**
+
+## Mobile-Friendly
+- **Responsive UI** adapts to screen size
+- **Touch-friendly** controls
+- **Optimized performance** for mobile devices
+- **Offline-capable** (with some functionality)
+
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 Inventory Manager/
 - app.py # Main Streamlit app
 - requirements.txt # Python dependencies
@@ -27,7 +80,7 @@ Inventory Manager/
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### 1. Clone the repository
 ```
@@ -64,7 +117,7 @@ $env:INVYPRO_DB="C:\full\path\inventory.db"
 streamlit run app.py
 ```
 
-## 📜 License: *MIT License — free to use and modify.*
+## License: *MIT License — free to use and modify.*
 ---
 
 ## 👨‍💻 Author
