@@ -7,14 +7,14 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 ---
 
 ## Features
-## Authentication & Security
+### Authentication & Security
 - **Secure login system** with PBKDF2 password hashing
 - **Organization-based isolation** - Data only visible to your organization's users
 - **Account lockout** after multiple failed attempts
 - **Session management** with automatic logout
 - **Environment-based configuration** for sensitive settings
 
-## Product Management
+### Product Management
 - **Add/edit/delete products** with full details (SKU, name, category, etc.)
 - **Supplier management** - Link products to suppliers
 - **Bulk import/export** via CSV
@@ -22,7 +22,7 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 - **Product search** by SKU, name, or category
 - **Pagination** for large inventories
 
-## Sales & Inventory Tracking
+### Sales & Inventory Tracking
 - **Record sales** with automatic stock deduction
 - **Restock tracking** with automatic inventory updates
 - **Stock adjustments** for corrections
@@ -30,7 +30,7 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 - **Transaction history** with timestamps
 - **Financial reporting** - Cost vs. sell price tracking
 
-## Reporting & Analytics
+### Reporting & Analytics
 - **Dashboard overview** with key metrics:
   - Total SKUs
   - Inventory value
@@ -40,7 +40,7 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 - **Custom date filtering** for transactions
 - **Export to CSV** for all data
 
-## System Features
+### System Features
 - **Audit logging** - Every action is recorded
 - **Responsive design** - Works on desktop and tablet
 - **Dark/light mode** support (follows system preference)
@@ -48,21 +48,21 @@ With InvyPro, you can manage products, track sales, restocks, and adjustments, a
 - **Localization** for currency and time zones
 - **Demo mode** for exploring features without login
 
-## Settings & Configuration
+### Settings & Configuration
 - **Organization settings** management
 - **Currency selection** (supports multiple currencies)
 - **Timezone configuration** for proper time tracking
 - **Negative stock** prevention toggle
 - **Data reset** option for your organization
 
-## Data Management
+### Data Management
 - **SQLite database** - Simple single-file storage
 - **Automatic backups** (configurable)
 - **CSV exports** for all tables
 - **Bulk operations** for mass updates
 - **Data integrity checks**
 
-## Mobile-Friendly
+### Mobile-Friendly
 - **Responsive UI** adapts to screen size
 - **Touch-friendly** controls
 - **Optimized performance** for mobile devices
