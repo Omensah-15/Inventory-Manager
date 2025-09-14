@@ -29,6 +29,10 @@ import streamlit as st
 import altair as alt
 import pytz
 
+try:
+    import sqlcipher3 as sqlite3
+except ImportError:
+    import sqlite3
 
 # ---------------------------
 # App config
