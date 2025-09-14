@@ -23,7 +23,8 @@ import base64
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, Dict, List
-from Crypto.Cipher import AES
+#from Crypto.Cipher import AES
+from cryptography.fernet import Fernet
 from Crypto.Random import get_random_bytes
 from Crypto.Protocol.KDF import scrypt
 
