@@ -3,3 +3,8 @@ pandas>=2.0.0
 altair>=5.0.0
 bcrypt>=4.0.0
 pytz
+streamlit-authenticator
+sqlcipher3
+pycryptodome
+cryptography
+pandas
