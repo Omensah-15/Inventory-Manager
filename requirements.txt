@@ -7,4 +7,3 @@ streamlit-authenticator
 sqlcipher3
 pycryptodome
 cryptography
-pandas
