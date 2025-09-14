@@ -1161,3 +1161,103 @@ elif page == "Stock History":
                     st.altair_chart(chart, use_container_width=True)
                     st.dataframe(tx[["sku", "name", "type", "quantity", "amount", "note", "created_at"]], use_container_width=True, hide_index=True)
 
+
+elif page == "Bulk Upload / Export":
+    st.header("📥 Bulk Upload / Export")
+    if st.session_state.demo_mode:
+        require_login_message()
+    else:
+        st.subheader("Upload Products CSV")
+        st.caption("Columns: sku, name, category, supplier, cost_price, sell_price, qty, reorder_level")
+        up = st.file_uploader("Choose product CSV", type=["csv"], key="bulk_products")
+        if up and st.session_state.authenticated:
+            df = pd.read_csv(up)
+            required = {"sku", "name"}
+            if not required.issubset(set(df.columns)):
+                st.error("CSV must include at least: sku, name.")
+            else:
+                count, errors = 0, []
+                for i, r in df.fillna("").iterrows():
+                    try:
+                        upsert_product(str(r.get("sku", "")).strip(), str(r.get("name", "")).strip(), str(r.get("category", "")).strip(), str(r.get("supplier", "")).strip(), float(r.get("cost_price", 0) or 0), float(r.get("sell_price", 0) or 0), int(r.get("qty", 0) or 0), int(r.get("reorder_level", 0) or 0))
+                        count += 1
+                    except Exception as e:
+                        errors.append(f"Row {i+2}: {str(e)}")
+                st.success(f"Upserted {count} products.")
+                if errors:
+                    err_csv = pd.DataFrame(errors, columns=["error"]).to_csv(index=False).encode("utf-8")
+                    st.download_button("Download Error Report", data=err_csv, file_name="product_upload_errors.csv", mime="text/csv", key="bulk_errs")
+                log_audit("bulk_products_upload", f"count={count}")
+
+        st.divider()
+        st.subheader("Upload Transactions CSV")
+        st.caption("Columns: sku, type (sale/restock/adjustment), quantity, amount(optional), note(optional)")
+        up2 = st.file_uploader("Choose transactions CSV", type=["csv"], key="bulk_tx")
+        if up2 and st.session_state.authenticated:
+            df2 = pd.read_csv(up2)
+            required2 = {"sku", "type", "quantity"}
+            if not required2.issubset(set(df2.columns)):
+                st.error("CSV must include: sku, type, quantity.")
+            else:
+                products = fetch_df("SELECT sku, product_id FROM products WHERE organization=?;", (current_org(),))
+                sku_to_pid = dict(zip(products["sku"], products["product_id"]))
+                ok, fail, errors = 0, 0, []
+                for i, r in df2.fillna("").iterrows():
+                    sku = str(r.get("sku", "")).strip()
+                    pid = sku_to_pid.get(sku)
+                    ttype = str(r.get("type", "")).strip().lower()
+                    qty = r.get("quantity", "")
+                    amt = float(r.get("amount", 0) or 0)
+                    note = str(r.get("note", ""))
+                    if not pid:
+                        errors.append(f"Row {i+2}: Invalid SKU '{sku}'"); fail += 1; continue
+                    if ttype not in {"sale", "restock", "adjustment"}:
+                        errors.append(f"Row {i+2}: Invalid type '{ttype}'"); fail += 1; continue
+                    try:
+                        qty_i = int(qty)
+                        if ttype in ("sale", "restock") and qty_i < 1:
+                            errors.append(f"Row {i+2}: Quantity must be positive"); fail += 1; continue
+                        add_transaction(pid, ttype, qty_i, amt, note)
+                        ok += 1
+                    except Exception as e:
+                        errors.append(f"Row {i+2}: {str(e)}"); fail += 1
+                st.success(f"Processed {ok} transactions. Skipped {fail}.")
+                if errors:
+                    err_csv = pd.DataFrame(errors, columns=["error"]).to_csv(index=False).encode("utf-8")
+                    st.download_button("Download Transaction Errors", data=err_csv, file_name="transaction_upload_errors.csv", mime="text/csv", key="bulk_tx_errs")
+                log_audit("bulk_transactions_upload", f"ok={ok}, fail={fail}")
+
+        st.divider()
+        st.subheader("Export Data")
+        if st.button("Export Products CSV", key="exp_prods"):
+            prods_df = fetch_df("SELECT sku,name,category,(SELECT name FROM suppliers s WHERE s.supplier_id=p.supplier_id) supplier,cost_price,sell_price,qty,reorder_level,created_at FROM products p WHERE organization=? ORDER BY created_at DESC;", (current_org(),))
+            csv, name = to_csv_download(prods_df, "products_export")
+            st.download_button("Download Products CSV", data=csv, file_name=name, mime="text/csv", key="download_prods")
+        if st.button("Export Transactions CSV", key="exp_tx"):
+            tx_df = transactions_df()
+            csv2, name2 = to_csv_download(tx_df, "transactions_export")
+            st.download_button("Download Transactions CSV", data=csv2, file_name=name2, mime="text/csv", key="download_tx")
+
+elif page == "Settings":
+    st.header("⚙️ Settings & Info")
+    st.markdown("**InvyPro** — Local SQLite single-file app. Per-organization isolation.")
+    tz_options = ["UTC", "Africa/Accra", "Europe/London", "America/New_York"]
+    st.session_state.timezone = st.selectbox("Time Zone", tz_options, index=tz_options.index(st.session_state.timezone) if st.session_state.timezone in tz_options else 0, key="settings_tz")
+    currency_options = ["GH₵", "USD $", "EUR €", "GBP £"]
+    st.session_state.currency = st.selectbox("Currency", currency_options, index=currency_options.index(st.session_state.currency) if st.session_state.currency in currency_options else 0, key="settings_currency")
+    st.session_state.prevent_negative_stock = st.checkbox("Prevent negative stock (sales & negative adjustments)", value=st.session_state.prevent_negative_stock, key="settings_prevent")
+
+    st.divider()
+    if st.session_state.authenticated:
+        st.markdown("**Danger zone — organization only**")
+        if st.button("Reset my organization data (delete products, transactions, suppliers)", key="reset_org"):
+            org = current_org()
+            if org:
+                run_query("DELETE FROM transactions WHERE organization=?;", (org,))
+                run_query("DELETE FROM products WHERE organization=?;", (org,))
+                run_query("DELETE FROM suppliers WHERE organization=?;", (org,))
+                run_query("DELETE FROM audit_logs WHERE organization=?;", (org,))
+                log_audit("reset_org", "Org data cleared")
+                st.success("Organization data cleared.")
+    else:
+        st.info("Log in to see organisation settings.")
