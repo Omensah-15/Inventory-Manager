@@ -23,14 +23,12 @@ import base64
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, Dict, List
-from cryptography.fernet import Fernet
-from Crypto.Random import get_random_bytes
-from Crypto.Protocol.KDF import scrypt
 
 import pandas as pd
 import streamlit as st
 import altair as alt
 import pytz
+
 
 # ---------------------------
 # App config
@@ -217,66 +215,46 @@ def decrypt_data(encrypted_data: bytes, key: str) -> bytes:
     cipher = AES.new(derived_key, AES.MODE_GCM, nonce=nonce)
     return cipher.decrypt_and_verify(ciphertext, tag)
 
+import shutil
+
 def create_encrypted_backup():
-    """Create an encrypted backup of the database"""
+    """Copy SQLCipher-encrypted DB as backup"""
     org = current_org()
     if not org:
         st.error("Login required to create backups")
         return False
-    
     try:
-        # Read the database file
-        with open(DB_PATH, 'rb') as f:
-            db_data = f.read()
-        
-        # Encrypt the database content
-        encrypted_data, _ = encrypt_data(db_data, BACKUP_ENCRYPTION_KEY)
-        
-        # Create backup filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_filename = f"backup_{org}_{timestamp}.enc"
-        
-        # Save encrypted backup
-        with open(backup_filename, 'wb') as f:
-            f.write(encrypted_data)
-        
-        # Record backup in database
+        backup_filename = f"backup_{org}_{timestamp}.db"
+        shutil.copy(DB_PATH, backup_filename)
+
         with db_session() as conn:
             conn.execute(
                 "INSERT INTO backups (organization, filename, size, encrypted) VALUES (?, ?, ?, ?)",
-                (org, backup_filename, len(encrypted_data), 1)
+                (org, backup_filename, os.path.getsize(backup_filename), 1),
             )
-        
-        log_audit("backup_created", f"filename={backup_filename}, size={len(encrypted_data)}")
+        log_audit("backup_created", f"filename={backup_filename}")
         return True
     except Exception as e:
-        st.error(f"Backup failed: {str(e)}")
-        log_audit("backup_failed", f"error={str(e)}")
+        st.error(f"Backup failed: {e}")
+        log_audit("backup_failed", f"error={e}")
         return False
 
+
 def restore_backup(backup_file):
-    """Restore database from an encrypted backup"""
+    """Restore DB from SQLCipher backup"""
     org = current_org()
     if not org:
         st.error("Login required to restore backups")
         return False
-    
     try:
-        # Read the encrypted backup
-        encrypted_data = backup_file.read()
-        
-        # Decrypt the backup
-        decrypted_data = decrypt_data(encrypted_data, BACKUP_ENCRYPTION_KEY)
-        
-        # Write the decrypted database
-        with open(DB_PATH, 'wb') as f:
-            f.write(decrypted_data)
-        
+        with open(DB_PATH, "wb") as f:
+            f.write(backup_file.read())
         log_audit("backup_restored", f"filename={backup_file.name}")
         return True
     except Exception as e:
-        st.error(f"Restore failed: {str(e)}")
-        log_audit("restore_failed", f"error={str(e)}")
+        st.error(f"Restore failed: {e}")
+        log_audit("restore_failed", f"error={e}")
         return False
 
 # ---------------------------
