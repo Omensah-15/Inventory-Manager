@@ -5,4 +5,3 @@ bcrypt>=4.0.0
 pytz
 streamlit-authenticator
 sqlcipher3
-cryptography==42.0.7
