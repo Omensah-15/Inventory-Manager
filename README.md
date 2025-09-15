@@ -72,14 +72,6 @@ Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamli
 
 ---
 
-## Project Structure
-Inventory Manager/
-- app.py # Main Streamlit app
-- requirements.txt # Python dependencies
-- README.md # Documentation
-
----
-
 ## License: *MIT License — free to use and modify.*
 ---
 
