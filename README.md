@@ -3,7 +3,9 @@
 **InventoryPro** is a lightweight, professional, and user-friendly **inventory tracking system**. With InvyPro, you can manage products, track sales, restocks, and adjustments, and visualize inventory trends — all directly from your browser.
 
 Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/). 
----
+
+## App Screenshot:
+
 
 ## Features
 #### Authentication & Security
@@ -76,45 +78,7 @@ Inventory Manager/
 - requirements.txt # Python dependencies
 - README.md # Documentation
 
-
 ---
-
-## Installation
-
-### 1. Clone the repository
-```
-git clone https://github.com/Omeansah-15/InventoryPro.git
-cd InventoryPro
-```
----
-### 2. Create a virtual environment (optional but recommended)
-```bash
-python -m venv venv
-source venv/bin/activate      # Mac/Linux
-venv\Scripts\activate         # Windows
-```
----
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
----
-## Environment Variables
-Create a .env file in the project root or set them in your terminal:
-```
-# macOS/Linux
-export INVYPRO_ADMIN="yourpassword"
-export INVYPRO_DB="/absolute/path/to/inventory.db"
-
-# Windows PowerShell
-$env:INVYPRO_ADMIN="yourpassword"
-$env:INVYPRO_DB="C:\full\path\inventory.db"
-```
----
-## Run the App
-```
-streamlit run app.py
-```
 
 ## License: *MIT License — free to use and modify.*
 ---
