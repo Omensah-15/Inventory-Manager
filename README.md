@@ -5,7 +5,7 @@
 Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/). 
 
 ## App Screenshot:
-![image alt](https://github.com/Omensah-15/credit-risk-verification-system-/blob/76af53cf8520e526e026ff85919e422a1b359584/data/screenshots/Screenshot%202025-09-15%20152853.png)
+![image alt](https://github.com/Omensah-15/Inventory-Manager/blob/04b3b3bc15e3d86467d33230c498b86dd9576f99/screenshot.png)
 
 ## Features
 #### Authentication & Security
