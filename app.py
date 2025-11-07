@@ -503,10 +503,10 @@ def demo_transactions_df():
 # ---------------------------
 # UI: sidebar auth (forms with unique keys!)
 # ---------------------------
-st.sidebar.title("📦 InvyPro")
+st.sidebar.title("InvyPro")
 
 if not st.session_state.authenticated:
-    with st.sidebar.expander("🔐 Login", expanded=True):
+    with st.sidebar.expander("Login", expanded=True):
         with st.form("login_form"):
             li_user = st.text_input("Username", key="login_username")
             li_pass = st.text_input("Password", type="password", key="login_password")
@@ -514,7 +514,7 @@ if not st.session_state.authenticated:
             if login_sub:
                 login(li_user, li_pass)
 
-    with st.sidebar.expander("✨ Create account"):
+    with st.sidebar.expander("Create account"):
         with st.form("signup_form"):
             su_user = st.text_input("Choose username", key="signup_username")
             su_email = st.text_input("Email (optional)", key="signup_email")
@@ -556,7 +556,7 @@ if page == "Dashboard":
     # ---------------------------
     # KPIs Section
     # ---------------------------
-    st.subheader("📊 Key Metrics")
+    st.subheader("Key Metrics")
     
     if st.session_state.demo_mode:
         # Demo KPIs
@@ -586,7 +586,7 @@ if page == "Dashboard":
     # Visualizations Section
     # ---------------------------
     st.divider()
-    st.subheader("📈 Inventory Analytics")
+    st.subheader("Inventory Analytics")
     
     if not st.session_state.demo_mode and prods.empty:
         st.info("No products yet. Add products to see analytics.")
@@ -644,7 +644,7 @@ if page == "Dashboard":
     # Products Table Section
     # ---------------------------
     st.divider()
-    st.subheader("📦 Product Inventory")
+    st.subheader("Product Inventory")
     
     if st.session_state.demo_mode:
         st.dataframe(prods, use_container_width=True, hide_index=True)
@@ -655,7 +655,7 @@ if page == "Dashboard":
             # Show low stock items first
             low_stock_prods = prods[prods['qty'] <= prods['reorder_level']]
             if not low_stock_prods.empty:
-                st.warning(f"⚠️ {len(low_stock_prods)} product(s) below reorder level")
+                st.warning(f"{len(low_stock_prods)} product(s) below reorder level")
                 st.dataframe(low_stock_prods, use_container_width=True, hide_index=True)
                 st.markdown("---")
                 st.markdown("**All Products**")
@@ -666,7 +666,7 @@ if page == "Dashboard":
     # Recent Transactions Section
     # ---------------------------
     st.divider()
-    st.subheader("🔄 Recent Transactions")
+    st.subheader("Recent Transactions")
     
     if st.session_state.demo_mode:
         st.dataframe(txns, use_container_width=True, hide_index=True)
@@ -678,10 +678,10 @@ if page == "Dashboard":
 
 
 # =======================
-# 📦 PRODUCTS PAGE
+# PRODUCTS PAGE
 # =======================
 elif page == "Products":
-    st.header("🧾 Products")
+    st.header("Products")
 
     # Product management functions using your existing schema
     def upsert_product(sku, name, category, supplier_name, cost_price, sell_price, qty, reorder_level):
@@ -815,12 +815,12 @@ elif page == "Products":
                         st.error(f"Error saving product: {str(e)}")
 
     # Product List Section
-    st.subheader("📄 Product Inventory")
+    st.subheader("Product Inventory")
     
     if st.session_state.demo_mode:
         st.warning("Please log in to manage products")
     else:
-        search_term = st.text_input("🔍 Search products", key="prod_search")
+        search_term = st.text_input("Search products", key="prod_search")
         page_size = st.selectbox("Items per page", [10, 20, 50, 100], index=1, key="prod_page_size")
         page_num = st.number_input("Page", min_value=1, value=1, step=1, key="prod_page_num")
         
@@ -846,7 +846,7 @@ elif page == "Products":
             )
             
             # Delete product option
-            with st.expander("🗑️ Delete Product", expanded=False):
+            with st.expander("Delete Product", expanded=False):
                 sku_to_delete = st.selectbox(
                     "Select product to delete",
                     options=["-- select --"] + products['sku'].tolist(),
@@ -864,7 +864,7 @@ elif page == "Products":
 
 ## Sale & Restock Page
 elif page == "Sales & Restock":
-    st.header("🧾 Sales & Restock")
+    st.header("Sales & Restock")
     if st.session_state.demo_mode:
         require_login_message()
     # list products
@@ -920,7 +920,7 @@ elif page == "Sales & Restock":
         st.dataframe(transactions_df(30), use_container_width=True, hide_index=True)
 
 elif page == "Suppliers":
-    st.header("🤝 Suppliers")
+    st.header("Suppliers")
     if st.session_state.demo_mode:
         require_login_message()
     name = st.text_input("Supplier Name", key="sup_name")
@@ -943,7 +943,7 @@ elif page == "Suppliers":
         st.dataframe(sups, use_container_width=True, hide_index=True)
 
 elif page == "Transactions":
-    st.header("📜 Transactions")
+    st.header("Transactions")
     if st.session_state.demo_mode:
         require_login_message()
         st.dataframe(demo_transactions_df(), use_container_width=True, hide_index=True)
@@ -972,7 +972,7 @@ elif page == "Transactions":
             st.download_button("Download CSV", data=csv, file_name=fname, mime="text/csv", key="tx_download")
 
 elif page == "Stock History":
-    st.header("📈 Stock History")
+    st.header("Stock History")
     if st.session_state.demo_mode:
         require_login_message()
     else:
@@ -994,7 +994,7 @@ elif page == "Stock History":
                     st.dataframe(tx[["sku", "name", "type", "quantity", "amount", "note", "created_at"]], use_container_width=True, hide_index=True)
 
 elif page == "Bulk Upload / Export":
-    st.header("📥 Bulk Upload / Export")
+    st.header("Bulk Upload / Export")
     if st.session_state.demo_mode:
         require_login_message()
     else:
@@ -1070,7 +1070,7 @@ elif page == "Bulk Upload / Export":
             st.download_button("Download Transactions CSV", data=csv2, file_name=name2, mime="text/csv", key="download_tx")
 
 elif page == "Settings":
-    st.header("⚙️ Settings & Info")
+    st.header("Settings & Info")
     st.markdown("**InvyPro** — Local SQLite single-file app. Per-organization isolation.")
     tz_options = ["UTC", "Africa/Accra", "Europe/London", "America/New_York"]
     st.session_state.timezone = st.selectbox("Time Zone", tz_options, index=tz_options.index(st.session_state.timezone) if st.session_state.timezone in tz_options else 0, key="settings_tz")
@@ -1092,5 +1092,6 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
