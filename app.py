@@ -546,14 +546,14 @@ def require_login_message():
 if page == "Dashboard":
     # Initialize data based on auth state
     if st.session_state.demo_mode:
-        st.markdown('<div class="hero"><h1>InvyPro — Inventory Manager</h1><p>Sign up or log in to manage your inventory. Below is a demo preview.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero"><h1>InvyPro — Inventory Manager</h1><p class="muted">Sign up or log in to manage your inventory. Below is a demo preview.</p></div>', unsafe_allow_html=True)
         prods = demo_products_df()
         txns = demo_transactions_df()
     else:
         prods = products_df(for_search=True)
         txns = transactions_df(90)
         if prods.empty and txns.empty:
-            st.markdown('<div class="hero"><h1>Welcome to InvyPro!</h1><p>Get started by adding your first products and transactions.</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="hero"><h1>Welcome to InvyPro!</h1><p class="muted">Get started by adding your first products and transactions.</p></div>', unsafe_allow_html=True)
 
     # ---------------------------
     # KPIs Section
@@ -1094,6 +1094,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
