@@ -547,7 +547,7 @@ def require_login_message():
 if page == "Dashboard":
     # Initialize data based on auth state
     if st.session_state.demo_mode:
-        st.markdown('<div class="hero"><h1>InvyPro — Inventory Manager</h1><p class="muted">Sign up or log in to manage your inventory. Below is a demo preview.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero"><h1>InvyPro — Inventory Manager</h1><p style="color:#111827; opacity:1; font-weight:500;">Sign up or log in to manage your inventory. Below is a demo preview.</p></div>', unsafe_allow_html=True)
         prods = demo_products_df()
         txns = demo_transactions_df()
     else:
@@ -1095,6 +1095,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
