@@ -35,7 +35,7 @@ st.set_page_config(page_title="InvyPro — Inventory Manager", page_icon="📦",
 st.markdown(
     """
     <style>
-    :root{--muted:#4b5563;--cardb:#eef2f6;--text:#0f172a;--ok:#035b6a;--low:#861b1b;}
+    :root{--muted:#1f2937;--cardb:#eef2f6;--text:#0f172a;--ok:#035b6a;--low:#861b1b;}
     .report-card{border:1px solid var(--cardb);border-radius:10px;padding:12px;margin-bottom:10px;background:#fff;}
     .small-label{font-size:0.85rem;color:var(--muted);margin-bottom:0.25rem;}
     .big-num{font-size:1.4rem;font-weight:700;margin:0;color:var(--text);}
@@ -1092,6 +1092,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
