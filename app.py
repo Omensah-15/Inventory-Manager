@@ -42,7 +42,10 @@ st.markdown(
     .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#f1f5f9;font-size:0.78rem;margin-top:6px;}
     .low{background:#fff1f2;color:var(--low);}
     .ok{background:#ecfeff;color:var(--ok);}
-    .muted{color: #1f2937;}
+    .stApp .hero .muted {
+        color: #111827;
+        opacity: 1;  
+    }
     .hero{padding:14px;border-radius:10px;background:linear-gradient(180deg,#f8fafc,#ffffff);margin-bottom:12px;}
     </style>
     """,
@@ -1092,6 +1095,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
