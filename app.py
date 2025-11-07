@@ -774,7 +774,7 @@ elif page == "Products":
         return fetch_df(query, tuple(params))
 
     # UI Components
-    with st.expander("➕ Add/Edit Product", expanded=True):
+    with st.expander("Add/Edit Product", expanded=True):
         with st.form("product_form"):
             col1, col2 = st.columns(2)
             with col1:
@@ -798,7 +798,7 @@ elif page == "Products":
             
             qty = st.number_input("Initial Quantity", min_value=0, value=0, step=1, key="prod_qty")
             
-            submitted = st.form_submit_button("💾 Save Product", use_container_width=True)
+            submitted = st.form_submit_button("Save Product", use_container_width=True)
             
             if submitted:
                 if not sku or not name:
@@ -1092,6 +1092,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
