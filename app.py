@@ -503,7 +503,7 @@ def demo_transactions_df():
 # ---------------------------
 # UI: sidebar auth (forms with unique keys!)
 # ---------------------------
-st.sidebar.title("InvyPro")
+st.sidebar.title("📦 InvyPro")
 
 if not st.session_state.authenticated:
     with st.sidebar.expander("Login", expanded=True):
@@ -1092,6 +1092,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
