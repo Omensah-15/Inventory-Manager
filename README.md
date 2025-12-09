@@ -5,7 +5,7 @@
 Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamlit.app/). 
 
 ## App Screenshot:
-![image alt](https://github.com/Omensah-15/Inventory-Manager/blob/04b3b3bc15e3d86467d33230c498b86dd9576f99/screenshot.png)
+![image alt](https://github.com/Omensah-15/Inventory-Manager/blob/1bf128b060e3e86f904790a29d03b56717ba73e8/App_screenshot.png)
 
 ## Features
 #### Authentication & Security
