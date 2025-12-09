@@ -1,6 +1,6 @@
 # app.py
 """
-InvyPro — Single-file Streamlit Inventory Manager
+InvyPro — Inventory Manager
 - Multi-user (signup/login)
 - Per-organization isolation (one org's data is only visible to its users)
 - SQLite persistence (users, suppliers, products, transactions, audit_logs)
@@ -1094,6 +1094,7 @@ elif page == "Settings":
                 st.success("Organization data cleared.")
     else:
         st.info("Log in to see organisation settings.")
+
 
 
 
