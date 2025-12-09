@@ -1095,19 +1095,3 @@ elif page == "Settings":
     else:
         st.info("Log in to see organisation settings.")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
