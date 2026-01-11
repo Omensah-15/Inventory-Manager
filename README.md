@@ -70,6 +70,8 @@ Try it here: [InvyPro](https://inventory-manager-tiqc6cxbtumh5rd8qh722i.streamli
 - **Offline-capable** (with some functionality)
 
 
+
+
 ---
 
 ## License: *MIT License — free to use and modify.*
